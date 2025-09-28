@@ -1,5 +1,9 @@
 # ServiceContainer
 
+[![Swift CI](https://github.com/sergejs/ServiceContainer/actions/workflows/swift.yml/badge.svg)](https://github.com/sergejs/ServiceContainer/actions/workflows/swift.yml)
+[![Swift Package Manager](https://img.shields.io/badge/Swift%20Package%20Manager-compatible-brightgreen.svg)](https://swift.org/package-manager/)
+[![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20macOS%20%7C%20tvOS%20%7C%20watchOS%20%7C%20Linux-lightgrey.svg)](https://github.com/sergejs/ServiceContainer)
+
 A lightweight, type-safe dependency injection container for Swift using property wrappers. Based on the pattern described in [this article](https://www.avanderlee.com/swift/dependency-injection/).
 
 ## Features
