@@ -10,7 +10,6 @@ class ExpensiveService {
     init() {
         ExpensiveService.initializationCount += 1
         self.id = UUID().uuidString
-        print("ExpensiveService initialized! Count: \(ExpensiveService.initializationCount), ID: \(id)")
     }
 }
 
