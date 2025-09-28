@@ -6,18 +6,28 @@
 //
 
 import Foundation
+import os.lock
 
 // MARK: - Lazy Storage Implementation
 
-/// Thread-safe lazy storage for dependency values
+/// Thread-safe lazy storage for dependency values using os_unfair_lock for optimal performance
 private final class LazyStore {
     private var storage: [String: Any] = [:]
-    private var factories: [String: Any] = [:]
-    private let lock = NSLock()
+    private var lock: UnsafeMutablePointer<os_unfair_lock>
+
+    init() {
+        lock = UnsafeMutablePointer<os_unfair_lock>.allocate(capacity: 1)
+        lock.initialize(to: os_unfair_lock())
+    }
+
+    deinit {
+        lock.deinitialize(count: 1)
+        lock.deallocate()
+    }
 
     func getValue<T>(for key: String, factory: () -> T) -> T {
-        lock.lock()
-        defer { lock.unlock() }
+        os_unfair_lock_lock(lock)
+        defer { os_unfair_lock_unlock(lock) }
 
         if let existing = storage[key] as? T {
             return existing
@@ -29,20 +39,20 @@ private final class LazyStore {
     }
 
     func setValue<T>(_ value: T, for key: String) {
-        lock.lock()
-        defer { lock.unlock() }
+        os_unfair_lock_lock(lock)
+        defer { os_unfair_lock_unlock(lock) }
         storage[key] = value
     }
 
     func reset(key: String) {
-        lock.lock()
-        defer { lock.unlock() }
+        os_unfair_lock_lock(lock)
+        defer { os_unfair_lock_unlock(lock) }
         storage.removeValue(forKey: key)
     }
 
     func resetAll() {
-        lock.lock()
-        defer { lock.unlock() }
+        os_unfair_lock_lock(lock)
+        defer { os_unfair_lock_unlock(lock) }
         storage.removeAll()
     }
 }

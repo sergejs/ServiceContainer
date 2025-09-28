@@ -43,6 +43,8 @@ final class LazyInitializationTests: XCTestCase {
         InjectedValues.resetAll()
     }
 
+    // MARK: - Basic Lazy Initialization
+
     func testLazyInitialization() {
         // Service should not be initialized yet
         XCTAssertEqual(ExpensiveService.initializationCount, 0, "Service should not initialize until accessed")
@@ -56,6 +58,8 @@ final class LazyInitializationTests: XCTestCase {
         XCTAssertEqual(ExpensiveService.initializationCount, 1, "Service should not reinitialize")
         XCTAssertEqual(service1.id, service2.id, "Should return the same instance")
     }
+
+    // MARK: - Reset Functionality
 
     func testResetAndReinitialize() {
         // First initialization
@@ -87,6 +91,8 @@ final class LazyInitializationTests: XCTestCase {
         XCTAssertEqual(ExpensiveService.initializationCount, 2, "Service should reinitialize after resetAll")
     }
 
+    // MARK: - Manual Override
+
     func testManualOverride() {
         // Service not initialized yet
         XCTAssertEqual(ExpensiveService.initializationCount, 0)
@@ -105,6 +111,8 @@ final class LazyInitializationTests: XCTestCase {
         XCTAssertEqual(ExpensiveService.initializationCount, 1, "No additional instances should be created")
     }
 
+    // MARK: - Property Wrapper Integration
+
     func testPropertyWrapperLazyAccess() {
         class TestClass {
             @Injected(\.expensiveService) var service: ExpensiveService
@@ -120,6 +128,8 @@ final class LazyInitializationTests: XCTestCase {
         _ = testObject.service
         XCTAssertEqual(ExpensiveService.initializationCount, 1, "Service should initialize on property access")
     }
+
+    // MARK: - Thread Safety
 
     func testThreadSafety() {
         let expectation = self.expectation(description: "Concurrent access")
