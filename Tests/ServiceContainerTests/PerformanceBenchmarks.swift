@@ -144,30 +144,4 @@ final class PerformanceBenchmarks: XCTestCase {
     }
 }
 
-// MARK: - Performance Results Documentation
-/*
- Performance Benchmark Results (M1 Mac)
- =====================================
-
- Lazy Initialization:
- - Defining 100 services: ~0.00001 seconds (essentially instant)
- - First access penalty: ~0.001 seconds per service
- - Subsequent accesses: ~0.000001 seconds
-
- Eager Initialization:
- - Creating 100 services: ~0.1 seconds
- - All services created upfront regardless of usage
-
- Startup Time Improvement:
- - Lazy: Define 50, access 5: ~0.005 seconds
- - Eager: Create all 50: ~0.05 seconds
- - Improvement: ~90% faster startup
-
- Memory Efficiency:
- - Lazy: Only creates accessed services (10% in test = 90% memory saved)
- - Eager: All services in memory from start
-
- Lock Performance (os_unfair_lock vs NSLock):
- - os_unfair_lock: ~15-20% faster for uncontended access
- - Better cache locality and lower overhead
- */
+// For up-to-date performance benchmark results, see `PerformanceBenchmarks.md` or the relevant section in the project README.
