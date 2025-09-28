@@ -31,7 +31,7 @@ jobs:
         xcodebuild build \
           -scheme ServiceContainer \
           -sdk iphonesimulator \
-          -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" \
+          -destination "platform=iOS Simulator,name=iPhone SE (3rd generation)" \
           CODE_SIGNING_ALLOWED=NO
 
     - name: Run tests on iOS Simulator
@@ -39,6 +39,6 @@ jobs:
         xcodebuild test \
           -scheme ServiceContainer \
           -sdk iphonesimulator \
-          -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" \
+          -destination "platform=iOS Simulator,name=iPhone SE (3rd generation)" \
           CODE_SIGNING_ALLOWED=NO \
           -quiet
