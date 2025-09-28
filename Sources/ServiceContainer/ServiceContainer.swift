@@ -6,12 +6,85 @@
 //
 
 import Foundation
+import os.lock
+
+// MARK: - Lazy Storage Implementation
+
+/// Thread-safe lazy storage for dependency values using os_unfair_lock for optimal performance
+private final class LazyStore {
+    private var storage: [String: Any] = [:]
+    private var lock: UnsafeMutablePointer<os_unfair_lock>
+
+    init() {
+        lock = UnsafeMutablePointer<os_unfair_lock>.allocate(capacity: 1)
+        lock.initialize(to: os_unfair_lock())
+    }
+
+    deinit {
+        lock.deinitialize(count: 1)
+        lock.deallocate()
+    }
+
+    func getValue<T>(for key: String, factory: () -> T) -> T {
+        os_unfair_lock_lock(lock)
+        defer { os_unfair_lock_unlock(lock) }
+
+        if let existing = storage[key] as? T {
+            return existing
+        }
+
+        let value = factory()
+        storage[key] = value
+        return value
+    }
+
+    func setValue<T>(_ value: T, for key: String) {
+        os_unfair_lock_lock(lock)
+        defer { os_unfair_lock_unlock(lock) }
+        storage[key] = value
+    }
+
+    func reset(key: String) {
+        os_unfair_lock_lock(lock)
+        defer { os_unfair_lock_unlock(lock) }
+        storage.removeValue(forKey: key)
+    }
+
+    func resetAll() {
+        os_unfair_lock_lock(lock)
+        defer { os_unfair_lock_unlock(lock) }
+        storage.removeAll()
+    }
+}
+
+private let lazyStore = LazyStore()
+
+// MARK: - InjectionKey Protocol
 
 public protocol InjectionKey {
     associatedtype Value
 
-    static var currentValue: Value { get set }
+    /// The default value factory. Override this to provide lazy initialization.
+    static var defaultValue: Value { get }
 }
+
+// Default implementation that makes it backward compatible
+public extension InjectionKey {
+    static var currentValue: Value {
+        get {
+            let key = String(reflecting: Self.self)
+            return lazyStore.getValue(for: key) {
+                Self.defaultValue
+            }
+        }
+        set {
+            let key = String(reflecting: Self.self)
+            lazyStore.setValue(newValue, for: key)
+        }
+    }
+}
+
+// MARK: - Property Wrapper
 
 @propertyWrapper
 public struct Injected<T> {
@@ -25,6 +98,8 @@ public struct Injected<T> {
         self.keyPath = keyPath
     }
 }
+
+// MARK: - InjectedValues Registry
 
 public struct InjectedValues {
     private static var current = InjectedValues()
@@ -43,5 +118,16 @@ public struct InjectedValues {
 
     public static func resolve<T>(_ keyPath: WritableKeyPath<InjectedValues, T>) -> T {
         current[keyPath: keyPath]
+    }
+
+    /// Reset a specific dependency to force re-creation on next access
+    public static func reset<K>(key: K.Type) where K: InjectionKey {
+        let keyString = String(reflecting: K.self)
+        lazyStore.reset(key: keyString)
+    }
+
+    /// Reset all dependencies (useful for testing)
+    public static func resetAll() {
+        lazyStore.resetAll()
     }
 }
