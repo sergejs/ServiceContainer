@@ -13,6 +13,7 @@ import os.lock
 /// Thread-safe lazy storage for dependency values using os_unfair_lock for optimal performance
 private final class LazyStore {
     private var storage: [String: Any] = [:]
+    private var factories: [String: Any] = [:]
     private var lock: UnsafeMutablePointer<os_unfair_lock>
 
     init() {
@@ -29,31 +30,50 @@ private final class LazyStore {
         os_unfair_lock_lock(lock)
         defer { os_unfair_lock_unlock(lock) }
 
+        // Check if value already exists
         if let existing = storage[key] as? T {
             return existing
         }
 
+        // Check if a factory was set for this key
+        if let factoryClosure = factories[key] as? () -> T {
+            let value = factoryClosure()
+            storage[key] = value
+            return value
+        }
+
+        // Use default factory
         let value = factory()
         storage[key] = value
         return value
     }
 
-    func setValue<T>(_ value: T, for key: String) {
+    func setValue(_ value: some Any, for key: String) {
         os_unfair_lock_lock(lock)
         defer { os_unfair_lock_unlock(lock) }
         storage[key] = value
+        factories.removeValue(forKey: key) // Clear any factory when setting value directly
+    }
+
+    func setFactory(for key: String, factory: @escaping () -> some Any) {
+        os_unfair_lock_lock(lock)
+        defer { os_unfair_lock_unlock(lock) }
+        factories[key] = factory
+        storage.removeValue(forKey: key) // Clear any existing value when setting factory
     }
 
     func reset(key: String) {
         os_unfair_lock_lock(lock)
         defer { os_unfair_lock_unlock(lock) }
         storage.removeValue(forKey: key)
+        factories.removeValue(forKey: key)
     }
 
     func resetAll() {
         os_unfair_lock_lock(lock)
         defer { os_unfair_lock_unlock(lock) }
         storage.removeAll()
+        factories.removeAll()
     }
 }
 
@@ -118,6 +138,13 @@ public struct InjectedValues {
 
     public static func resolve<T>(_ keyPath: WritableKeyPath<InjectedValues, T>) -> T {
         current[keyPath: keyPath]
+    }
+
+    /// Set a lazy factory closure for a dependency that will be called on first access
+    /// This allows setting production implementations without eagerly creating instances at app startup
+    public static func setFactory<K>(_ key: K.Type, factory: @escaping () -> K.Value) where K: InjectionKey {
+        let keyString = String(reflecting: K.self)
+        lazyStore.setFactory(for: keyString, factory: factory)
     }
 
     /// Reset a specific dependency to force re-creation on next access
