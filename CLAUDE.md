@@ -103,11 +103,11 @@ InjectedValues[NetworkProviderKey.self] = MockNetworkProvider(mockData: "Test")
 
 ## Platform Requirements
 
-- macOS 10.15+
-- iOS 13.0+
-- watchOS 6.0+
-- tvOS 13.0+
-- Swift 5.5+
+- macOS 13.0+
+- iOS 16.0+
+- watchOS 9.0+
+- tvOS 16.0+
+- Swift 5.7+
 
 ## Key Implementation Patterns
 
